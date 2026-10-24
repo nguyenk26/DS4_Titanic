@@ -6,7 +6,7 @@ from pathlib import Path
 CURRENT_DIR = Path(__file__).resolve().parent
 
 
-@st.cache_resource
+@st.cache_resource(show_spinner=False)
 def load_model():
     with st.spinner("Đang tải mô hình Titanic, vui lòng chờ..."):
         return joblib.load(CURRENT_DIR / "titanic_model.pkl")
@@ -59,10 +59,11 @@ with col2:
 
 if st.button("Dự đoán kết quả"):
     input_data = build_input_data(pclass, sex, age, fare, sibsp, parch, embarked, title)
+    probabilities = model.predict_proba(input_data)[0]
     prediction = model.predict(input_data)[0]
-    probability = model.predict_proba(input_data)[0][1]
+    probability = probabilities[1]
 
     if prediction == 1:
-        st.success(f"Khả năng SỐNG SÓT cao! (Xác suất: {probability*100:.2f}%)")
+        st.success(f"Khả năng SỐNG SÓT cao! (Xác suất: {probability * 100:.2f}%)")
     else:
-        st.error(f"Khả năng CHẾT cao! (Xác suất sống sót: {probability*100:.2f}%)")
+        st.error(f"Khả năng CHẾT cao! (Xác suất sống sót: {probability * 100:.2f}%)")
