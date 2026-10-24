@@ -7,7 +7,12 @@ from pathlib import Path
 
 # 1. Load model đã đóng gói
 CURRENT_DIR = Path(__file__).resolve().parent
-model = joblib.load(CURRENT_DIR / 'titanic_model.pkl')
+
+@st.cache_resource
+def load_model():
+    return joblib.load(CURRENT_DIR / 'titanic_model.pkl')
+
+model = load_model()
 
 st.title("🚢 Dự đoán Sống sót Tàu Titanic")
 st.write("Nhập thông tin hành khách dưới đây để dự đoán khả năng sống sót.")
