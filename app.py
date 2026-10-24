@@ -1,23 +1,48 @@
-
 import streamlit as st
 import pandas as pd
 import joblib
-import numpy as np
 from pathlib import Path
 
-# 1. Load model đã đóng gói
 CURRENT_DIR = Path(__file__).resolve().parent
+
 
 @st.cache_resource
 def load_model():
-    return joblib.load(CURRENT_DIR / 'titanic_model.pkl')
+    with st.spinner("Đang tải mô hình Titanic, vui lòng chờ..."):
+        return joblib.load(CURRENT_DIR / "titanic_model.pkl")
 
-model = load_model()
 
+def build_input_data(pclass, sex, age, fare, sibsp, parch, embarked, title):
+    family_size = sibsp + parch + 1
+    is_alone = 1 if family_size == 1 else 0
+    has_cabin = 0
+
+    return pd.DataFrame([
+        {
+            "Pclass": pclass,
+            "Sex": sex,
+            "Age": age,
+            "SibSp": sibsp,
+            "Parch": parch,
+            "Fare": fare,
+            "Embarked": embarked,
+            "Title": title,
+            "FamilySize": family_size,
+            "IsAlone": is_alone,
+            "HasCabin": has_cabin,
+        }
+    ])
+
+
+if "model" not in st.session_state:
+    st.session_state.model = load_model()
+
+model = st.session_state.model
+
+st.set_page_config(page_title="Titanic Survival Predictor", page_icon="🚢", layout="centered")
 st.title("🚢 Dự đoán Sống sót Tàu Titanic")
 st.write("Nhập thông tin hành khách dưới đây để dự đoán khả năng sống sót.")
 
-# 2. Giao diện nhập liệu
 col1, col2 = st.columns(2)
 
 with col1:
@@ -32,31 +57,11 @@ with col2:
     embarked = st.selectbox("Cảng lên tàu (Embarked)", ["S", "C", "Q"])
     title = st.selectbox("Danh xưng (Title)", ["Mr", "Mrs", "Miss", "Master", "Rare"])
 
-# 3. Tính toán các feature phụ giống như bước Feature Engineering
-family_size = sibsp + parch + 1
-is_alone = 1 if family_size == 1 else 0
-has_cabin = 0 # Giả định mặc định
-
-# Tạo dataframe đầu vào
-input_data = pd.DataFrame([{
-    "Pclass": pclass,
-    "Sex": sex,
-    "Age": age,
-    "SibSp": sibsp,
-    "Parch": parch,
-    "Fare": fare,
-    "Embarked": embarked,
-    "Title": title,
-    "FamilySize": family_size,
-    "IsAlone": is_alone,
-    "HasCabin": has_cabin
-}])
-
-# 4. Dự đoán khi bấm nút
 if st.button("Dự đoán kết quả"):
+    input_data = build_input_data(pclass, sex, age, fare, sibsp, parch, embarked, title)
     prediction = model.predict(input_data)[0]
     probability = model.predict_proba(input_data)[0][1]
-    
+
     if prediction == 1:
         st.success(f"Khả năng SỐNG SÓT cao! (Xác suất: {probability*100:.2f}%)")
     else:
